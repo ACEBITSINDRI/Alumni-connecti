@@ -19,7 +19,7 @@ import {
 } from '../controllers/authController.js';
 import { protect, verifyFirebaseToken } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
-import { uploadRegistrationFiles, handleUploadError } from '../middleware/upload.js';
+import { firebaseUpload } from '../middleware/firebaseUpload.js';
 
 const router = express.Router();
 
@@ -58,7 +58,7 @@ const resetPasswordValidation = [
 ];
 
 // Routes (Firebase-based)
-router.post('/register', uploadRegistrationFiles, handleUploadError, registerValidation, validate, register);
+router.post('/register', firebaseUpload, registerValidation, validate, register);
 router.post('/login', protect, loginValidation, validate, login);
 router.post('/google-login', verifyFirebaseToken, googleLoginValidation, validate, googleLogin);
 router.post('/linkedin-login', verifyFirebaseToken, linkedInLoginValidation, validate, linkedInLogin);

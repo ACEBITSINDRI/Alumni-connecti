@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import LeftSidebar from '../components/dashboard/LeftSidebar';
@@ -127,7 +127,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900 animate-fadeIn animate-gradient transition-colors duration-300">
+    <div className="min-h-screen bg-[#F3F2EF] dark:bg-gray-900 transition-colors duration-300">
       <Navbar
         isAuthenticated={true}
         userRole={user?.role}
@@ -146,136 +146,112 @@ const DashboardPage: React.FC = () => {
 
           {/* Main Feed */}
           <main className="lg:col-span-6 animate-stagger-2">
-            {/* Posts Container with Professional Background */}
-            <div className="bg-gradient-to-b from-white/50 via-sky-50/40 to-blue-50/50 dark:from-gray-800/70 dark:via-gray-700/40 dark:to-slate-800/50 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-lg border border-white/70 dark:border-gray-700/50 bg-dot-pattern relative overflow-hidden transition-colors duration-300">
-              {/* Subtle shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 dark:from-white/5 via-transparent to-transparent pointer-events-none"></div>
-              <div className="relative z-10">
-            {/* Create Post Section (Alumni Only) */}
-            {user?.role === 'alumni' && (
-              <div className="bg-gradient-to-br from-white via-white to-orange-50/30 dark:from-gray-800 dark:via-gray-700 dark:to-orange-900/20 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-orange-100 dark:border-orange-800/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                <div className="mb-3 sm:mb-4">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center">
-                    <Plus size={20} className="mr-2 text-orange-600 dark:text-orange-400" />
-                    Share with the Community
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1">Post updates, job opportunities, or advice to help students and fellow alumni</p>
+            {/* Posts Container */}
+            <div className="w-full">
+              {/* Create Post Section (Alumni Only) */}
+              {user?.role === 'alumni' && (
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 mb-4 sm:mb-6 border border-neutral-200 dark:border-gray-700">
+                  <div className="mb-3 sm:mb-4">
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                      Share an Update
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Post updates, job opportunities, or advice to help the community</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                    {/* Job Posting Button */}
+                    <button
+                      onClick={() => setIsCreatePostOpen(true)}
+                      className="group flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-lg p-3 sm:p-4 transition-colors border border-blue-100 dark:border-blue-800/50"
+                    >
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <p className="font-semibold text-xs sm:text-sm">Post a Job</p>
+                    </button>
+
+                    {/* Internship Posting Button */}
+                    <button
+                      onClick={() => setIsCreatePostOpen(true)}
+                      className="group flex flex-col items-center justify-center bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 rounded-lg p-3 sm:p-4 transition-colors border border-green-100 dark:border-green-800/50"
+                    >
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <p className="font-semibold text-xs sm:text-sm">Post Internship</p>
+                    </button>
+
+                    {/* General Post Button */}
+                    <button
+                      onClick={() => setIsCreatePostOpen(true)}
+                      className="group flex flex-col items-center justify-center bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded-lg p-3 sm:p-4 transition-colors border border-orange-100 dark:border-orange-800/50"
+                    >
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <p className="font-semibold text-xs sm:text-sm">Share Post</p>
+                    </button>
+                  </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                  {/* Job Posting Button */}
-                  <button
-                    onClick={() => setIsCreatePostOpen(true)}
-                    className="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all transform hover:scale-105 hover:shadow-xl"
-                  >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                      <div className="flex items-center justify-center mb-1 sm:mb-2">
-                        <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="font-bold text-xs sm:text-sm">Post a Job</p>
-                      <p className="text-xs opacity-90 mt-0.5 sm:mt-1 hidden sm:block">Share job openings</p>
-                    </div>
-                  </button>
-
-                  {/* Internship Posting Button */}
-                  <button
-                    onClick={() => setIsCreatePostOpen(true)}
-                    className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all transform hover:scale-105 hover:shadow-xl"
-                  >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                      <div className="flex items-center justify-center mb-1 sm:mb-2">
-                        <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                      </div>
-                      <p className="font-bold text-xs sm:text-sm">Post Internship</p>
-                      <p className="text-xs opacity-90 mt-0.5 sm:mt-1 hidden sm:block">Share internships</p>
-                    </div>
-                  </button>
-
-                  {/* General Post Button */}
-                  <button
-                    onClick={() => setIsCreatePostOpen(true)}
-                    className="group relative overflow-hidden bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all transform hover:scale-105 hover:shadow-xl"
-                  >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
-                    <div className="relative">
-                      <div className="flex items-center justify-center mb-1 sm:mb-2">
-                        <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </div>
-                      <p className="font-bold text-xs sm:text-sm">Create Post</p>
-                      <p className="text-xs opacity-90 mt-0.5 sm:mt-1 hidden sm:block">Share updates & advice</p>
-                    </div>
-                  </button>
+              {/* Filter Tabs */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 sm:mb-6 overflow-x-auto border border-neutral-200 dark:border-gray-700 scrollbar-hide">
+                <div className="flex space-x-1 sm:space-x-1 p-1 min-w-max sm:min-w-0">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setActiveFilter(filter.value)}
+                      className={`px-4 sm:px-4 py-2 sm:py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${activeFilter === filter.value
+                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'text-neutral-600 dark:text-gray-300 hover:bg-neutral-50 dark:hover:bg-gray-700 hover:text-neutral-900 dark:hover:text-white'
+                        }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
 
-            {/* Filter Tabs */}
-            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl mb-4 sm:mb-6 overflow-x-auto border-2 border-sky-100/80 dark:border-gray-700/80 hover:shadow-2xl transition-all duration-300 hover:border-sky-200 dark:hover:border-gray-600 scrollbar-hide">
-              <div className="flex space-x-1 sm:space-x-1 p-2 sm:p-3 min-w-max sm:min-w-0">
-                {filters.map((filter) => (
-                  <button
-                    key={filter.value}
-                    onClick={() => setActiveFilter(filter.value)}
-                    className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${
-                      activeFilter === filter.value
-                        ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-200/50 dark:shadow-blue-900/50'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-sky-50 dark:hover:bg-gray-700 hover:text-sky-700 dark:hover:text-sky-400'
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
+              {/* Posts Feed */}
+              <div className="space-y-3 sm:space-y-6">
+                {isLoading ? (
+                  <>
+                    <SkeletonPost />
+                    <SkeletonPost />
+                    <SkeletonPost />
+                  </>
+                ) : error ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 text-center transition-colors duration-300">
+                    <p className="text-red-600 dark:text-red-400 mb-4 text-sm sm:text-base">{error}</p>
+                    <Button variant="primary" size="sm" onClick={fetchPosts}>
+                      Try Again
+                    </Button>
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 text-center transition-colors duration-300">
+                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm sm:text-base">No posts found</p>
+                    {user?.role === 'alumni' && (
+                      <Button variant="primary" size="sm" onClick={() => setIsCreatePostOpen(true)}>
+                        Create First Post
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  posts.map((post) => (
+                    <PostCard key={post._id} post={transformPost(post)} />
+                  ))
+                )}
               </div>
-            </div>
 
-            {/* Posts Feed */}
-            <div className="space-y-3 sm:space-y-6">
-              {isLoading ? (
-                <>
-                  <SkeletonPost />
-                  <SkeletonPost />
-                  <SkeletonPost />
-                </>
-              ) : error ? (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 text-center transition-colors duration-300">
-                  <p className="text-red-600 dark:text-red-400 mb-4 text-sm sm:text-base">{error}</p>
-                  <Button variant="primary" size="sm" onClick={fetchPosts}>
-                    Try Again
+              {/* Load More */}
+              {!isLoading && posts.length > 0 && currentPage < totalPages && (
+                <div className="mt-4 sm:mt-6 text-center">
+                  <Button variant="outline" size="md" onClick={handleLoadMore} className="w-full sm:w-auto">
+                    Load More Posts
                   </Button>
                 </div>
-              ) : posts.length === 0 ? (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sm:p-8 text-center transition-colors duration-300">
-                  <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm sm:text-base">No posts found</p>
-                  {user?.role === 'alumni' && (
-                    <Button variant="primary" size="sm" onClick={() => setIsCreatePostOpen(true)}>
-                      Create First Post
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                posts.map((post) => (
-                  <PostCard key={post._id} post={transformPost(post)} />
-                ))
               )}
-            </div>
-
-            {/* Load More */}
-            {!isLoading && posts.length > 0 && currentPage < totalPages && (
-              <div className="mt-4 sm:mt-6 text-center">
-                <Button variant="outline" size="md" onClick={handleLoadMore} className="w-full sm:w-auto">
-                  Load More Posts
-                </Button>
-              </div>
-            )}
-              </div>
             </div>
           </main>
 

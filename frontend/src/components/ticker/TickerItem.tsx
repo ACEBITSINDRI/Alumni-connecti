@@ -12,17 +12,17 @@ interface TickerItemProps {
 }
 
 const variantStyles = {
-  info: 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100',
-  success: 'bg-green-50 text-green-900 border-green-200 hover:bg-green-100',
-  warning: 'bg-yellow-50 text-yellow-900 border-yellow-200 hover:bg-yellow-100',
-  urgent: 'bg-red-50 text-red-900 border-red-200 hover:bg-red-100',
+  info: 'bg-white/10 text-white border-white/20 hover:bg-white/20',
+  success: 'bg-green-500/10 text-emerald-100 border-green-500/20 hover:bg-green-500/20',
+  warning: 'bg-yellow-500/10 text-amber-100 border-yellow-500/20 hover:bg-yellow-500/20',
+  urgent: 'bg-red-500/10 text-rose-100 border-red-500/20 hover:bg-red-500/20',
 };
 
 const iconColors = {
-  info: 'text-blue-600',
-  success: 'text-green-600',
-  warning: 'text-yellow-600',
-  urgent: 'text-red-600',
+  info: 'text-sky-300',
+  success: 'text-emerald-400',
+  warning: 'text-amber-400',
+  urgent: 'text-rose-400',
 };
 
 const TickerItem: React.FC<TickerItemProps> = ({ item, onClick }) => {

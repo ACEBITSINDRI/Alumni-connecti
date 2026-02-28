@@ -7,12 +7,13 @@ import {
   deletePost,
   likePost,
   commentOnPost,
+  replyToComment,
   likeComment,
   deleteComment,
   savePost,
 } from '../controllers/postController.js';
 import { protect } from '../middleware/auth.js';
-import { uploadPostImages, handleUploadError } from '../middleware/upload.js';
+import { firebaseUpload } from '../middleware/firebaseUpload.js';
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router.get('/', getPosts);
 router.use(protect);
 
 // Post CRUD routes
-router.post('/', uploadPostImages, handleUploadError, createPost);
+router.post('/', firebaseUpload, createPost);
 
 router
   .route('/:id')
@@ -34,6 +35,7 @@ router
 // Post engagement routes
 router.post('/:id/like', likePost);
 router.post('/:id/comment', commentOnPost);
+router.post('/:id/comments/:commentId/reply', replyToComment);
 router.post('/:id/save', savePost);
 router.post('/:id/comments/:commentId/like', likeComment);
 router.delete('/:id/comments/:commentId', deleteComment);

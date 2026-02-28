@@ -8,6 +8,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/database.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { onRequest } from 'firebase-functions/v2/https';
 
 // Routes
 import authRoutes from './routes/authRoutes.js';
@@ -159,8 +160,11 @@ app.use(errorHandler);
 // Start server
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`
+// Only start the server if NOT in Firebase environment
+let server;
+if (!process.env.FIREBASE_CONFIG && !process.env.FUNCTIONS_EMULATOR) {
+  server = app.listen(PORT, () => {
+    console.log(`
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
 ║        Alumni Connect API Server                        ║
@@ -171,13 +175,26 @@ const server = app.listen(PORT, () => {
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
   `);
-});
+  });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
-  console.log(`Error: ${err.message}`);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err, promise) => {
+    console.log(`Error: ${err.message}`);
+    // Close server & exit process
+    if (server) {
+      server.close(() => process.exit(1));
+    } else {
+      process.exit(1);
+    }
+  });
+}
+
+// Export the app as a Firebase Cloud Function
+export const api = onRequest({
+  region: 'us-central1',
+  memory: '1GiB',
+  maxInstances: 10,
+  minInstances: typeof process.env.NODE_ENV === 'production' ? 1 : 0
+}, app);
 
 export default app;

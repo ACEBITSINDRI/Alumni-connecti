@@ -1,5 +1,5 @@
 import { getUserModel, AlumniModel, StudentModel } from '../models/User.js';
-import { uploadProfilePicture } from '../config/cloudinary.js';
+import { uploadProfilePicture, uploadCoverPhotoImage } from '../config/cloudinary.js';
 
 // @desc    Get all users with pagination and filters
 // @route   GET /api/users
@@ -403,6 +403,45 @@ export const uploadProfilePictureHandler = async (req, res) => {
   }
 };
 
+// @desc    Upload cover photo
+// @route   PUT /api/users/cover-photo
+// @access  Private
+export const uploadCoverPhotoHandler = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please upload a cover photo',
+      });
+    }
+
+    // We use the dedicated uploadCoverPhotoImage which does not enforce face detection
+    const result = await uploadCoverPhotoImage(req.file.buffer, req.user._id.toString());
+
+    const UserModel = getUserModel(req.user.role);
+    const user = await UserModel.findByIdAndUpdate(
+      req.user._id,
+      { coverPhoto: result.url },
+      { new: true }
+    ).select('-password -emailVerificationToken -passwordResetToken');
+
+    res.status(200).json({
+      success: true,
+      message: 'Cover photo uploaded successfully',
+      data: {
+        coverPhoto: result.url,
+        user,
+      },
+    });
+  } catch (error) {
+    console.error('Upload cover photo error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading cover photo',
+    });
+  }
+};
+
 // @desc    Get user's connections
 // @route   GET /api/users/connections
 // @access  Private
@@ -461,8 +500,9 @@ export const getSuggestedConnections = async (req, res) => {
       });
     }
 
-    // Get IDs of already connected users
-    const connectedIds = currentUser.connections.map(id => id.toString());
+    // Get IDs of already connected users, safeguard against empty connections
+    const connections = currentUser.connections || [];
+    const connectedIds = connections.map(id => id.toString());
     connectedIds.push(req.user._id.toString()); // Exclude self
 
     // Build suggestion query based on role
@@ -491,7 +531,7 @@ export const getSuggestedConnections = async (req, res) => {
           ],
         })
           .select('firstName lastName email profilePicture currentRole company batch location role')
-          .limit(limitNum / 2)
+          .limit(Math.ceil(limitNum / 2))
           .lean(),
         StudentModel.find({
           _id: { $nin: connectedIds },
@@ -501,7 +541,7 @@ export const getSuggestedConnections = async (req, res) => {
           ],
         })
           .select('firstName lastName email profilePicture batch department role')
-          .limit(limitNum / 2)
+          .limit(Math.ceil(limitNum / 2))
           .lean(),
       ]);
 
@@ -545,11 +585,17 @@ export const getUserStats = async (req, res) => {
       });
     }
 
-    // Import Post model dynamically to avoid circular dependency
-    const Post = (await import('../models/Post.js')).default;
-
-    // Count posts created by user
-    const postsCount = await Post.countDocuments({ author: req.user._id });
+    let postsCount = 0;
+    try {
+      import('mongoose').then(async (mongoose) => {
+        const Post = mongoose.model('Post');
+        postsCount = await Post.countDocuments({ author: req.user._id });
+      }).catch(e => {
+        console.error('Failed to get post model in stats:', e);
+      })
+    } catch (err) {
+      console.error('Fallback Post import failed:', err);
+    }
 
     // Count saved posts
     const savedPostsCount = user.savedPosts ? user.savedPosts.length : 0;

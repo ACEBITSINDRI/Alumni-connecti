@@ -66,7 +66,7 @@ const postSchema = new mongoose.Schema(
     comments: [{
       user: {
         type: mongoose.Schema.Types.ObjectId,
-        // No ref - will be populated manually if needed
+        refPath: 'comments.userModel', // Dynamic reference for comments
       },
       userModel: {
         type: String,
@@ -86,7 +86,11 @@ const postSchema = new mongoose.Schema(
       replies: [{
         user: {
           type: mongoose.Schema.Types.ObjectId,
-          // No ref - just storing IDs
+          refPath: 'comments.replies.userModel',
+        },
+        userModel: {
+          type: String,
+          enum: ['Alumni', 'Student'],
         },
         content: {
           type: String,
@@ -149,17 +153,17 @@ postSchema.index({ createdAt: -1 });
 postSchema.index({ 'likes.user': 1 });
 
 // Virtual for like count
-postSchema.virtual('likeCount').get(function() {
+postSchema.virtual('likeCount').get(function () {
   return this.likes.length;
 });
 
 // Virtual for comment count
-postSchema.virtual('commentCount').get(function() {
+postSchema.virtual('commentCount').get(function () {
   return this.comments.length;
 });
 
 // Virtual for share count
-postSchema.virtual('shareCount').get(function() {
+postSchema.virtual('shareCount').get(function () {
   return this.shares.length;
 });
 

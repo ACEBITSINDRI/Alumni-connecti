@@ -11,7 +11,21 @@ export interface Comment {
   };
   content: string;
   createdAt: string;
-  likes?: string[];
+  likes?: { user: string }[];
+  replies?: CommentReply[];
+}
+
+export interface CommentReply {
+  _id: string;
+  user: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePicture?: string;
+    role: 'student' | 'alumni' | 'admin';
+  };
+  content: string;
+  createdAt: string;
 }
 
 export interface Post {
@@ -136,9 +150,21 @@ export const addComment = async (postId: string, content: string): Promise<PostR
   return response.data;
 };
 
+// Add a reply to a comment
+export const replyToComment = async (postId: string, commentId: string, content: string): Promise<PostResponse> => {
+  const response = await api.post<PostResponse>(`/api/posts/${postId}/comments/${commentId}/reply`, { content });
+  return response.data;
+};
+
+// Like a comment
+export const likeComment = async (postId: string, commentId: string): Promise<PostResponse> => {
+  const response = await api.post<PostResponse>(`/api/posts/${postId}/comments/${commentId}/like`);
+  return response.data;
+};
+
 // Delete a comment
 export const deleteComment = async (postId: string, commentId: string): Promise<PostResponse> => {
-  const response = await api.delete<PostResponse>(`/api/posts/${postId}/comment/${commentId}`);
+  const response = await api.delete<PostResponse>(`/api/posts/${postId}/comments/${commentId}`);
   return response.data;
 };
 

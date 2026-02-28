@@ -5,29 +5,31 @@ import {
   getUserById,
   updateProfile,
   uploadProfilePictureHandler,
+  uploadCoverPhotoHandler,
   getConnections,
   getSuggestedConnections,
   getUserStats,
 } from '../controllers/userController.js';
 import { protect } from '../middleware/auth.js';
-import upload from '../middleware/upload.js';
+import { firebaseUpload } from '../middleware/firebaseUpload.js';
 
 const router = express.Router();
 
-// Public routes (no authentication required)
+// Public generic routes
 router.get('/', getAllUsers);
 router.get('/search', searchUsers);
+
+// Protected specific routes
+router.get('/connections', protect, getConnections);
+router.get('/suggestions', protect, getSuggestedConnections);
+router.get('/stats', protect, getUserStats);
+
+// Profile update routes (Protected)
+router.put('/profile', protect, updateProfile);
+router.put('/profile-picture', protect, firebaseUpload, uploadProfilePictureHandler);
+router.put('/cover-photo', protect, firebaseUpload, uploadCoverPhotoHandler);
+
+// Public dynamic route (MUST be placed last to avoid shadowing /stats, /suggestions, /connections, etc.)
 router.get('/:id', getUserById);
-
-// Protected routes (authentication required)
-router.use(protect);
-
-router.get('/connections', getConnections);
-router.get('/suggestions', getSuggestedConnections);
-router.get('/stats', getUserStats);
-
-// Profile update routes
-router.put('/profile', updateProfile);
-router.put('/profile-picture', upload.single('profilePicture'), uploadProfilePictureHandler);
 
 export default router;

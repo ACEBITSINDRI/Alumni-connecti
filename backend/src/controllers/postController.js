@@ -454,6 +454,7 @@ export const commentOnPost = async (req, res) => {
 
     const comment = {
       user: req.user._id,
+      userModel: req.user.role === 'alumni' ? 'Alumni' : 'Student',
       content,
       createdAt: new Date(),
     };
@@ -513,6 +514,104 @@ export const commentOnPost = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error adding comment',
+    });
+  }
+};
+
+// @desc    Reply to a comment
+// @route   POST /api/posts/:id/comments/:commentId/reply
+// @access  Private
+export const replyToComment = async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reply content is required',
+      });
+    }
+
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found',
+      });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+
+    if (!comment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Comment not found',
+      });
+    }
+
+    const reply = {
+      user: req.user._id,
+      userModel: req.user.role === 'alumni' ? 'Alumni' : 'Student',
+      content,
+      createdAt: new Date(),
+    };
+
+    comment.replies.push(reply);
+    await post.save();
+
+    // Populate the newly added reply's user info
+    await post.populate({
+      path: 'comments.replies.user',
+      select: 'firstName lastName profilePicture role email',
+    });
+
+    const newReply = comment.replies[comment.replies.length - 1];
+
+    // Notification logic
+    const postAuthorStr = post.author.toString();
+    const commentAuthorStr = comment.user.toString();
+    const currentUserStr = req.user._id.toString();
+
+    // Determine who needs a notification
+    const recipients = new Set();
+    if (commentAuthorStr !== currentUserStr) recipients.add(commentAuthorStr);
+    if (postAuthorStr !== currentUserStr && postAuthorStr !== commentAuthorStr) recipients.add(postAuthorStr);
+
+    if (recipients.size > 0) {
+      try {
+        const replierName = `${req.user.firstName} ${req.user.lastName}`;
+        const preview = truncateText(content, 50);
+        const notificationData = NotificationTemplates.COMMENT_REPLY(replierName, truncateText(comment.content, 50));
+
+        for (const recipientId of recipients) {
+          sendCompleteNotification({
+            recipientId,
+            senderId: req.user._id,
+            type: notificationData.type,
+            title: notificationData.title,
+            message: notificationData.message,
+            actionUrl: `/posts/${post._id}`,
+            relatedPost: post._id,
+            sendPush: true,
+            sendInApp: true,
+          }).catch(err => console.error('Notification error:', err));
+        }
+      } catch (err) {
+        console.error('Background notification failed:', err);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Reply added successfully',
+      data: newReply,
+    });
+  } catch (error) {
+    console.error('Reply error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding reply',
     });
   }
 };

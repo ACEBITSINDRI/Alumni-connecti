@@ -159,6 +159,24 @@ export const uploadProfilePicture = async (file: File): Promise<ApiResponse<{ pr
   }
 };
 
+// Upload cover photo
+export const uploadCoverPhoto = async (file: File): Promise<ApiResponse<{ coverPhoto: string; user: UserProfile }>> => {
+  try {
+    const formData = new FormData();
+    formData.append('coverPhoto', file);
+
+    const response = await api.put('/api/users/cover-photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Upload cover photo error:', error);
+    throw error;
+  }
+};
+
 // Get connections
 export const getConnections = async (): Promise<ApiResponse<Connection[]>> => {
   try {

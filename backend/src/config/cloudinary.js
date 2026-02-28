@@ -101,6 +101,34 @@ export const uploadIdCard = async (fileBuffer, userId) => {
 };
 
 /**
+ * Upload cover photo
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {String} userId - User ID for unique naming
+ * @returns {Promise<Object>} - Upload result with URL and public_id
+ */
+export const uploadCoverPhotoImage = async (fileBuffer, userId) => {
+  try {
+    console.log('Uploading cover photo for user:', userId);
+    const result = await uploadToCloudinary(fileBuffer, 'alumni-connect/covers', {
+      public_id: `cover_${userId}_${Date.now()}`,
+      transformation: [
+        { width: 1200, height: 400, crop: 'limit' },
+        { quality: 'auto', fetch_format: 'auto' }
+      ],
+    });
+
+    console.log('Cover photo uploaded successfully:', result.secure_url);
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+    };
+  } catch (error) {
+    console.error('Cloudinary cover photo upload error:', error.message);
+    throw new Error(`Failed to upload cover photo: ${error.message}`);
+  }
+};
+
+/**
  * Upload post images
  * @param {Buffer} fileBuffer - File buffer
  * @param {String} userId - User ID

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, Briefcase, MapPin, IndianRupee, Send, X, Copy, Check } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, Bookmark, MoreVertical, Briefcase, MapPin, IndianRupee, Send, X, Copy, Check } from 'lucide-react';
 import Card from '../common/Card';
 import Avatar from '../common/Avatar';
 import Badge from '../common/Badge';
 import Button from '../common/Button';
-import { likePost, unlikePost, addComment, savePost, unsavePost } from '../../services/post.service';
+import { likePost, unlikePost, addComment, savePost, unsavePost, replyToComment, likeComment } from '../../services/post.service';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -28,6 +28,21 @@ interface JobDetails {
 }
 
 interface CommentData {
+  _id: string;
+  user: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profilePicture?: string;
+    role: string;
+  };
+  content: string;
+  createdAt: string;
+  likes?: { user: string }[];
+  replies?: CommentReplyData[];
+}
+
+interface CommentReplyData {
   _id: string;
   user: {
     _id: string;
@@ -76,6 +91,12 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+  // Use local state for comments data to update instantly without refetching parent
+  const [localCommentsData, setLocalCommentsData] = useState<CommentData[]>(post.commentsData || []);
 
   const handleLike = async () => {
     if (!user || isLikingPost) return;
@@ -146,6 +167,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         // Update comment count
         setComments(comments + 1);
         setCommentText('');
+        if (response.data) {
+          setLocalCommentsData(prev => [...prev, response.data as any]);
+        }
         toast.success('Comment added! 💬');
       } else {
         toast.error(response.message || 'Failed to add comment');
@@ -155,6 +179,58 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       toast.error(error.response?.data?.message || 'Failed to add comment');
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const handleReplyToComment = async (commentId: string) => {
+    if (!user || !replyText.trim() || isSubmittingReply) return;
+
+    setIsSubmittingReply(true);
+
+    try {
+      const response = await replyToComment(post.id, commentId, replyText);
+
+      if (response.success && response.data) {
+        setReplyText('');
+        setReplyingTo(null);
+        setLocalCommentsData(prev => prev.map(c => {
+          if (c._id === commentId) {
+            return {
+              ...c,
+              replies: [...(c.replies || []), response.data as any]
+            };
+          }
+          return c;
+        }));
+        toast.success('Reply added! 💬');
+      } else {
+        toast.error(response.message || 'Failed to add reply');
+      }
+    } catch (error: any) {
+      console.error('Add reply error:', error);
+      toast.error(error.response?.data?.message || 'Failed to add reply');
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
+
+  const handleLikeComment = async (commentId: string) => {
+    if (!user) return;
+    try {
+      // Optimistic update
+      setLocalCommentsData(prev => prev.map(c => {
+        if (c._id === commentId) {
+          const hasLiked = c.likes?.some(l => l.user === user._id);
+          const newLikes = hasLiked
+            ? c.likes?.filter(l => l.user !== user._id)
+            : [...(c.likes || []), { user: user._id }];
+          return { ...c, likes: newLikes };
+        }
+        return c;
+      }));
+      await likeComment(post.id, commentId);
+    } catch (error) {
+      console.error('Like comment error:', error);
     }
   };
 
@@ -242,7 +318,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     <>
       <Card
         variant="elevated"
-        className="overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white dark:bg-gray-800 border border-sky-100 dark:border-gray-700 rounded-xl sm:rounded-2xl animate-fadeIn"
+        className="overflow-hidden bg-white dark:bg-gray-800 border border-neutral-200 dark:border-gray-700 rounded-xl mb-4"
       >
         {/* Post Header */}
         <div className="p-3 sm:p-5 md:p-6">
@@ -253,12 +329,12 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 alt={post.author.name}
                 size="sm"
                 fallback={post.author.name}
-                className="cursor-pointer ring-2 ring-sky-100 dark:ring-gray-600 hover:ring-sky-300 dark:hover:ring-sky-500 transition-all duration-300 flex-shrink-0"
+                className="cursor-pointer flex-shrink-0 mt-0.5"
                 onClick={() => navigate(`/profile/${post.author.id}`)}
               />
               <div className="flex-1 min-w-0">
                 <h3
-                  className="font-bold text-sm sm:text-base text-gray-900 dark:text-white hover:text-sky-600 dark:hover:text-sky-400 cursor-pointer truncate transition-colors duration-300"
+                  className="font-bold text-sm sm:text-base text-gray-900 dark:text-white hover:underline cursor-pointer truncate"
                   onClick={() => navigate(`/profile/${post.author.id}`)}
                 >
                   {post.author.name}
@@ -274,7 +350,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 </div>
               </div>
             </div>
-            <button className="p-1.5 sm:p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-300 transform hover:scale-110 flex-shrink-0">
+            <button className="p-1 sm:p-2 text-neutral-400 dark:text-gray-500 hover:text-neutral-600 dark:hover:text-gray-300 rounded-full hover:bg-neutral-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0">
               <MoreVertical size={18} className="sm:w-5 sm:h-5" />
             </button>
           </div>
@@ -285,7 +361,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {/* Post Title */}
           {post.title && (
             <h2
-              className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 cursor-pointer hover:text-sky-600 dark:hover:text-sky-400 transition-colors duration-300 leading-tight"
+              className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors leading-tight"
               onClick={() => navigate(`/post/${post.id}`)}
             >
               {post.title}
@@ -300,39 +376,39 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {post.content.length > 300 && !showFullContent && (
             <button
               onClick={() => setShowFullContent(true)}
-              className="text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-semibold transition-colors duration-300 text-sm -mt-2 mb-3"
+              className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:underline font-medium transition-colors text-sm -mt-2 mb-3"
             >
-              Read more
+              ...see more
             </button>
           )}
 
           {/* Job Details (if applicable) */}
           {(post.type === 'job' || post.type === 'internship') && post.jobDetails && (
-            <div className="bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 dark:from-blue-900/20 dark:via-sky-900/20 dark:to-blue-800/20 border-2 border-blue-200 dark:border-blue-700/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 mb-3 sm:mb-4 hover:shadow-lg transition-all duration-300">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm mb-3 sm:mb-4">
-                <div className="flex items-center space-x-2 sm:space-x-3 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3">
-                  <Briefcase size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0 sm:w-[18px] sm:h-[18px]" />
+            <div className="bg-neutral-50 dark:bg-gray-900/40 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 border border-neutral-100 dark:border-gray-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm mb-3 sm:mb-4">
+                <div className="flex items-center space-x-2 sm:space-x-3 bg-white dark:bg-gray-800 rounded-md p-2">
+                  <Briefcase size={16} className="text-neutral-600 dark:text-neutral-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Company</p>
-                    <p className="text-sm sm:text-base text-gray-900 dark:text-white font-bold truncate">{post.jobDetails.company}</p>
+                    <p className="text-xs text-neutral-500 dark:text-gray-400 font-medium">Company</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{post.jobDetails.company}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 sm:space-x-3 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3">
-                  <MapPin size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0 sm:w-[18px] sm:h-[18px]" />
+                <div className="flex items-center space-x-2 sm:space-x-3 bg-white dark:bg-gray-800 rounded-md p-2">
+                  <MapPin size={16} className="text-neutral-600 dark:text-neutral-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Location</p>
-                    <p className="text-sm sm:text-base text-gray-900 dark:text-white font-bold truncate">{post.jobDetails.location}</p>
+                    <p className="text-xs text-neutral-500 dark:text-gray-400 font-medium">Location</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{post.jobDetails.location}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 sm:space-x-3 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3">
-                  <Badge variant="info" size="sm" className="font-bold text-xs">{post.jobDetails.type}</Badge>
+                <div className="flex items-center space-x-2 sm:space-x-3 bg-white dark:bg-gray-800 rounded-md p-2">
+                  <Badge variant="info" size="sm" className="font-semibold text-xs">{post.jobDetails.type}</Badge>
                 </div>
                 {post.jobDetails.salary && (
-                  <div className="flex items-center space-x-2 sm:space-x-3 bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3">
-                    <IndianRupee size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0 sm:w-[18px] sm:h-[18px]" />
+                  <div className="flex items-center space-x-2 sm:space-x-3 bg-white dark:bg-gray-800 rounded-md p-2">
+                    <IndianRupee size={16} className="text-neutral-600 dark:text-neutral-400 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Salary</p>
-                      <p className="text-sm sm:text-base text-gray-900 dark:text-white font-bold truncate">{post.jobDetails.salary}</p>
+                      <p className="text-xs text-neutral-500 dark:text-gray-400 font-medium">Salary</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{post.jobDetails.salary}</p>
                     </div>
                   </div>
                 )}
@@ -341,10 +417,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 <Button
                   variant="primary"
                   size="sm"
-                  className="w-full bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
+                  className="w-full text-sm font-semibold rounded-full"
                   onClick={() => window.open(post.jobDetails?.applyLink, '_blank')}
                 >
-                  Apply Now →
+                  Apply Now
                 </Button>
               )}
             </div>
@@ -353,13 +429,12 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {/* Post Images */}
           {post.images && post.images.length > 0 && (
             <div
-              className={`grid gap-1.5 sm:gap-2 mb-3 sm:mb-4 ${
-                post.images.length === 1
-                  ? 'grid-cols-1'
-                  : post.images.length === 2
+              className={`grid gap-1.5 sm:gap-2 mb-3 sm:mb-4 ${post.images.length === 1
+                ? 'grid-cols-1'
+                : post.images.length === 2
                   ? 'grid-cols-2'
                   : 'grid-cols-2'
-              }`}
+                }`}
             >
               {post.images.slice(0, 4).map((image, index) => (
                 <div
@@ -384,56 +459,54 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           )}
 
           {/* Engagement Stats */}
-          <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-300 py-2 sm:py-3 border-t border-gray-100 dark:border-gray-700">
-            <span className="font-semibold hover:text-sky-600 dark:hover:text-sky-400 cursor-pointer transition-colors">
+          <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-gray-400 py-2 sm:py-3 border-t border-neutral-100 dark:border-gray-700 mt-2">
+            <span className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors">
               {likes} {likes === 1 ? 'like' : 'likes'}
             </span>
-            <span className="font-semibold hover:text-sky-600 dark:hover:text-sky-400 cursor-pointer transition-colors">
+            <span className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors">
               {comments} {comments === 1 ? 'comment' : 'comments'}
             </span>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100 dark:border-gray-700 gap-1">
+          <div className="flex items-center justify-between pt-1 pb-1 border-t border-neutral-100 dark:border-gray-700 gap-1 sm:gap-2">
             <button
               onClick={handleLike}
               disabled={isLikingPost}
-              className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 ${
-                isLiked
-                  ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              } ${isLikingPost ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2 sm:py-3 rounded-md font-semibold text-sm transition-colors ${isLiked
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                : 'text-neutral-500 dark:text-gray-400 hover:bg-neutral-100 dark:hover:bg-gray-700'
+                } ${isLikingPost ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className={`sm:w-5 sm:h-5 ${isLiked ? 'animate-pulse' : ''}`} />
+              <ThumbsUp size={18} fill={isLiked ? 'currentColor' : 'none'} className={isLiked ? 'animate-[bounce_0.5s_ease-in-out]' : ''} />
               <span className="hidden xs:inline">Like</span>
             </button>
 
             <button
               onClick={() => setShowCommentBox(!showCommentBox)}
-              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-gray-600 dark:text-gray-300 font-semibold text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"
+              className="flex-1 flex items-center justify-center space-x-2 py-2 sm:py-3 rounded-md font-semibold text-sm text-neutral-500 dark:text-gray-400 hover:bg-neutral-100 dark:hover:bg-gray-700 transition-colors"
             >
-              <MessageCircle size={16} className="sm:w-5 sm:h-5" />
+              <MessageCircle size={18} />
               <span className="hidden xs:inline">Comment</span>
             </button>
 
             <button
               onClick={() => setShowShareModal(true)}
-              className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-gray-600 dark:text-gray-300 font-semibold text-xs sm:text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"
+              className="flex-1 flex items-center justify-center space-x-2 py-2 sm:py-3 rounded-md font-semibold text-sm text-neutral-500 dark:text-gray-400 hover:bg-neutral-100 dark:hover:bg-gray-700 transition-colors"
             >
-              <Share2 size={16} className="sm:w-5 sm:h-5" />
+              <Share2 size={18} />
               <span className="hidden xs:inline">Share</span>
             </button>
 
             <button
               onClick={handleSave}
               disabled={isSavingPost}
-              className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 ${
-                isSaved
-                  ? 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              } ${isSavingPost ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2 sm:py-3 rounded-md font-semibold text-sm transition-colors ${isSaved
+                ? 'text-neutral-800 dark:text-white bg-neutral-100 dark:bg-gray-700'
+                : 'text-neutral-500 dark:text-gray-400 hover:bg-neutral-100 dark:hover:bg-gray-700'
+                } ${isSavingPost ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} className="sm:w-5 sm:h-5" />
+              <Bookmark size={18} fill={isSaved ? 'currentColor' : 'none'} />
               <span className="hidden xs:inline">Save</span>
             </button>
           </div>
@@ -493,47 +566,155 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           )}
 
           {/* Display Comments */}
-          {post.commentsData && post.commentsData.length > 0 && (
+          {localCommentsData.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <div className="space-y-3">
-                {(showAllComments ? post.commentsData : post.commentsData.slice(0, 2)).map((comment) => (
+              <div className="space-y-4">
+                {(showAllComments ? localCommentsData : localCommentsData.slice(0, 2)).map((comment) => (
                   <div key={comment._id} className="flex space-x-3">
+                    {/* Main Comment Avatar */}
                     {comment.user?.profilePicture ? (
                       <img
                         src={comment.user.profilePicture}
-                        alt={`${comment.user.firstName} ${comment.user.lastName}`}
+                        alt={`${comment.user?.firstName || 'User'} ${comment.user?.lastName || ''}`}
                         className="w-8 h-8 rounded-full object-cover ring-2 ring-sky-100 dark:ring-gray-600 flex-shrink-0"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null; // prevent infinite loop
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
                       />
-                    ) : (
-                      <div className="w-8 h-8 bg-sky-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-sky-600 dark:text-sky-400 font-bold text-xs">
-                          {comment.user?.firstName?.charAt(0)}{comment.user?.lastName?.charAt(0)}
-                        </span>
+                    ) : null}
+                    {/* Fallback avatar if no profile picture OR if image fails to load */}
+                    <div className={`w-8 h-8 bg-sky-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0 ${comment.user?.profilePicture ? 'hidden' : ''}`}>
+                      <span className="text-sky-600 dark:text-sky-400 font-bold text-xs">
+                        {comment.user?.firstName?.charAt(0) || 'U'}{comment.user?.lastName?.charAt(0) || ''}
+                      </span>
+                    </div>
+
+                    <div className="flex-1">
+                      {/* Main Comment Bubble */}
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl rounded-tl-none p-3 shadow-sm border border-gray-100 dark:border-gray-600">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-sm text-gray-900 dark:text-white">
+                            {comment.user?.firstName || 'Unknown'} {comment.user?.lastName || 'User'}
+                          </h4>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {getRelativeTime(new Date(comment.createdAt))}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
+                          {comment.content}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-sm text-gray-900 dark:text-white">
-                          {comment.user?.firstName} {comment.user?.lastName}
-                        </h4>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {getRelativeTime(new Date(comment.createdAt))}
-                        </span>
+
+                      {/* Comment Actions */}
+                      <div className="flex items-center space-x-3 mt-1 ml-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        <button
+                          onClick={() => handleLikeComment(comment._id)}
+                          className={`hover:text-blue-600 transition-colors flex items-center gap-1 ${comment.likes?.some(l => l.user === user?._id) ? 'text-blue-600' : ''}`}
+                        >
+                          <ThumbsUp size={12} className={comment.likes?.some(l => l.user === user?._id) ? 'fill-current' : ''} />
+                          {comment.likes?.length ? comment.likes.length : 'Like'}
+                        </button>
+                        <span>|</span>
+                        <button onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)} className="hover:text-blue-600 transition-colors">
+                          Reply
+                        </button>
                       </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
-                        {comment.content}
-                      </p>
+
+                      {/* Nested Replies Rendering */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="mt-2 space-y-3">
+                          {comment.replies.map((reply) => (
+                            <div key={reply._id} className="flex space-x-2 mt-2">
+                              {/* Reply Avatar */}
+                              {reply.user?.profilePicture ? (
+                                <img
+                                  src={reply.user.profilePicture}
+                                  alt={`${reply.user?.firstName || 'User'} ${reply.user?.lastName || ''}`}
+                                  className="w-6 h-6 rounded-full object-cover ring-1 ring-sky-100 dark:ring-gray-600 flex-shrink-0"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.onerror = null;
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              {/* Reply Fallback avatar */}
+                              <div className={`w-6 h-6 bg-sky-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0 ${reply.user?.profilePicture ? 'hidden' : ''}`}>
+                                <span className="text-sky-600 dark:text-sky-400 font-bold text-[10px]">
+                                  {reply.user?.firstName?.charAt(0) || 'U'}{reply.user?.lastName?.charAt(0) || ''}
+                                </span>
+                              </div>
+
+                              <div className="flex-1">
+                                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl rounded-tl-none p-2.5 shadow-sm border border-gray-100 dark:border-gray-600">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h4 className="font-semibold text-xs text-gray-900 dark:text-white">
+                                      {reply.user?.firstName || 'Unknown'} {reply.user?.lastName || 'User'}
+                                    </h4>
+                                    <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                      {getRelativeTime(new Date(reply.createdAt))}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Reply Box Dropdown */}
+                      {replyingTo === comment._id && (
+                        <div className="flex space-x-2 mt-3 pl-2 animate-fadeIn">
+                          {user?.profilePicture ? (
+                            <img
+                              src={user.profilePicture}
+                              alt={user.firstName}
+                              className="w-6 h-6 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center">
+                              <span className="text-sky-600 font-bold text-[10px]">{user?.firstName?.charAt(0)}</span>
+                            </div>
+                          )}
+                          <div className="flex-1 flex items-center border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 overflow-hidden px-3">
+                            <input
+                              type="text"
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Add a reply..."
+                              className="flex-1 bg-transparent py-1.5 text-xs sm:text-sm focus:outline-none dark:text-white"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleReplyToComment(comment._id);
+                              }}
+                            />
+                            <button
+                              onClick={() => handleReplyToComment(comment._id)}
+                              disabled={!replyText.trim() || isSubmittingReply}
+                              className={`ml-2 text-sky-600 dark:text-sky-400 hover:text-sky-700 p-1 ${(!replyText.trim() || isSubmittingReply) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              <Send size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {post.commentsData.length > 2 && (
+              {localCommentsData.length > 2 && (
                 <button
                   onClick={() => setShowAllComments(!showAllComments)}
                   className="mt-3 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors"
                 >
-                  {showAllComments ? 'Show less' : `View all ${post.commentsData.length} comments`}
+                  {showAllComments ? 'Show less' : `View all ${localCommentsData.length} comments`}
                 </button>
               )}
             </div>

@@ -48,7 +48,7 @@ export const onMessageListener = (callback: (payload: any) => void) => {
  */
 export const saveFCMToken = async (token: string) => {
   try {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
     await fetch(`${API_URL}/users/fcm-token`, {
       method: 'POST',

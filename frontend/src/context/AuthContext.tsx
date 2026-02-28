@@ -10,6 +10,7 @@ interface User {
   email: string;
   role: 'student' | 'alumni' | 'admin';
   profilePicture?: string;
+  coverPhoto?: string;
   batch?: string;
   company?: string;
   currentRole?: string;

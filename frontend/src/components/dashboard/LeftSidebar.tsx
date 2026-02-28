@@ -12,6 +12,7 @@ interface User {
   email?: string;
   role?: 'student' | 'alumni' | 'admin';
   profilePicture?: string;
+  coverPhoto?: string;
   batch?: string;
   company?: string;
   currentRole?: string;
@@ -65,18 +66,21 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user }) => {
   return (
     <div className="space-y-6 sticky top-20">
       {/* User Profile Card */}
-      <Card variant="elevated" className="overflow-hidden border border-neutral-100">
+      <Card variant="elevated" className="overflow-hidden border border-neutral-200 shadow-sm bg-white dark:bg-gray-800">
         {/* Cover */}
-        <div className="h-20 bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-500"></div>
+        <div
+          className="h-24 bg-neutral-200 dark:bg-gray-700 bg-cover bg-center"
+          style={user.coverPhoto ? { backgroundImage: `url(${user.coverPhoto})` } : {}}
+        ></div>
 
         {/* Profile Info */}
-        <div className="px-4 pb-4 -mt-10">
+        <div className="px-4 pb-4 -mt-12 text-center sm:text-left">
           <Avatar
             src={user.profilePicture}
             alt={`${user.firstName} ${user.lastName}`}
             size="xl"
             fallback={`${user.firstName?.[0]}${user.lastName?.[0]}`}
-            className="border-4 border-white cursor-pointer shadow-medium ring-2 ring-primary-100"
+            className="border-4 border-white dark:border-gray-800 cursor-pointer mx-auto sm:mx-0 shadow-sm bg-white"
             onClick={() => navigate('/profile')}
           />
 
@@ -92,13 +96,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user }) => {
               {user.batch && ` • Batch ${user.batch}`}
             </p>
             {user.company && (
-              <p className="text-sm text-neutral-500 mt-1">{user.company}</p>
+              <p className="text-sm text-neutral-500 dark:text-gray-400 mt-1">{user.company}</p>
             )}
           </div>
 
           <button
             onClick={() => navigate('/profile/edit')}
-            className="w-full mt-4 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-500 rounded-lg hover:shadow-md transition-all"
+            className="w-full mt-4 px-4 py-2 text-sm font-semibold text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-gray-600 rounded-full hover:bg-neutral-50 dark:hover:bg-gray-700 transition-colors"
           >
             Edit Profile
           </button>
@@ -106,8 +110,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user }) => {
       </Card>
 
       {/* Quick Stats */}
-      <Card variant="elevated" className="p-4 border border-neutral-100">
-        <h3 className="font-bold text-neutral-900 mb-4 text-base">Quick Stats</h3>
+      <Card variant="elevated" className="p-4 border border-neutral-200 shadow-sm bg-white dark:bg-gray-800">
+        <h3 className="font-bold text-neutral-900 dark:text-white mb-4 text-base">Quick Stats</h3>
         <div className="space-y-2">
           <StatItem
             icon={<FileText size={18} />}
@@ -138,12 +142,12 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user }) => {
 
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
-        <Card variant="elevated" className="p-4">
+        <Card variant="elevated" className="p-4 shadow-sm border border-neutral-200 bg-white dark:bg-gray-800">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Upcoming Events</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">Upcoming Events</h3>
             <button
               onClick={() => navigate('/events')}
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium"
             >
               View All
             </button>
@@ -178,8 +182,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({ user }) => {
       )}
 
       {/* Quick Links */}
-      <Card variant="elevated" className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
+      <Card variant="elevated" className="p-4 shadow-sm border border-neutral-200 bg-white dark:bg-gray-800">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h3>
         <div className="space-y-2">
           <QuickLink
             label="My Posts"
@@ -213,14 +217,14 @@ interface StatItemProps {
 
 const StatItem: React.FC<StatItemProps> = ({ icon, label, value, onClick }) => (
   <div
-    className="flex items-center justify-between p-3 rounded-xl hover:bg-gradient-to-r hover:from-primary-50 hover:to-secondary-50 cursor-pointer transition-all group border border-transparent hover:border-primary-100"
+    className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
     onClick={onClick}
   >
     <div className="flex items-center space-x-3">
-      <div className="text-primary-600 group-hover:text-primary-700 transition-colors">{icon}</div>
-      <span className="text-sm text-neutral-700 font-medium group-hover:text-neutral-900">{label}</span>
+      <div className="text-neutral-500 dark:text-gray-400 group-hover:text-neutral-700 dark:group-hover:text-white">{icon}</div>
+      <span className="text-sm text-neutral-600 dark:text-gray-300 font-medium group-hover:text-neutral-900 dark:group-hover:text-white">{label}</span>
     </div>
-    <span className="text-sm font-bold text-neutral-900 bg-neutral-100 group-hover:bg-white px-2.5 py-1 rounded-lg transition-colors">{value}</span>
+    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:text-blue-700">{value}</span>
   </div>
 );
 
@@ -233,7 +237,7 @@ interface QuickLinkProps {
 const QuickLink: React.FC<QuickLinkProps> = ({ label, onClick }) => (
   <button
     onClick={onClick}
-    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+    className="w-full text-left px-3 py-2 text-sm text-neutral-600 dark:text-gray-300 font-semibold hover:bg-neutral-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
   >
     {label}
   </button>

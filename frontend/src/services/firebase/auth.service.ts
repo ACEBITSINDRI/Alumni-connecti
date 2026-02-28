@@ -15,7 +15,7 @@ import {
 import { auth } from '../../config/firebase';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export interface RegisterData {
   firstName: string;
@@ -195,13 +195,13 @@ export const loginWithLinkedIn = async (role: 'student' | 'alumni') => {
   try {
     // Use backend LinkedIn OAuth endpoint
     const linkedinAuthUrl = `${API_URL}/api/auth/linkedin?role=${role}`;
-    
+
     // Open LinkedIn OAuth in a new window
     const width = 500;
     const height = 600;
     const left = window.innerWidth / 2 - width / 2;
     const top = window.innerHeight / 2 - height / 2;
-    
+
     const linkedinWindow = window.open(
       linkedinAuthUrl,
       'LinkedIn',
@@ -217,11 +217,11 @@ export const loginWithLinkedIn = async (role: 'student' | 'alumni') => {
       const checkWindow = setInterval(() => {
         if (linkedinWindow.closed) {
           clearInterval(checkWindow);
-          
+
           // Check if user was authenticated by checking localStorage
           const accessToken = localStorage.getItem('accessToken');
           const user = localStorage.getItem('user');
-          
+
           if (accessToken && user) {
             resolve({
               user: JSON.parse(user),

@@ -52,8 +52,8 @@ const NotificationTicker: React.FC<NotificationTickerProps> = ({
     return (
       <div className={cn(
         'sticky top-16 z-40',
-        'bg-gradient-to-r from-blue-500 via-sky-500 to-indigo-500',
-        'shadow-md',
+        'bg-[#0B1A30]', // Solid or subtle gradient to match navbar
+        'shadow-md border-b border-slate-700',
         'h-10 md:h-10 lg:h-9',
         className
       )}>
@@ -80,8 +80,8 @@ const NotificationTicker: React.FC<NotificationTickerProps> = ({
     <div
       className={cn(
         'sticky top-16 z-40',
-        'bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600',
-        'shadow-md overflow-hidden',
+        'bg-gradient-to-r from-[#0B1A30] via-slate-800 to-[#0B1A30]', // Academic deep blue gradient
+        'shadow-md overflow-hidden border-b border-[#1A2C47]',
         'h-10 md:h-10 lg:h-9',
         className
       )}
@@ -114,7 +114,7 @@ const NotificationTicker: React.FC<NotificationTickerProps> = ({
       {/* Close Button (optional) */}
       <button
         onClick={() => setIsVisible(false)}
-        className="absolute top-0.5 right-0.5 text-white/80 hover:text-white hover:bg-white/20 p-0.5 rounded transition-colors"
+        className="absolute top-0.5 right-0.5 text-slate-300 hover:text-white hover:bg-white/10 p-0.5 rounded transition-colors"
         aria-label="Close ticker"
       >
         <X className="w-3 h-3 md:w-4 md:h-4" />

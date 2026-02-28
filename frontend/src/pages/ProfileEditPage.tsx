@@ -10,7 +10,7 @@ import Footer from '../components/common/Footer';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
-import { updateProfile, uploadProfilePicture, type Experience, type Education, type UserProfile } from '../services/user.service';
+import { updateProfile, uploadProfilePicture, uploadCoverPhoto, type Experience, type Education, type UserProfile } from '../services/user.service';
 
 const ProfileEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +47,7 @@ const ProfileEditPage: React.FC = () => {
 
   const [newSkill, setNewSkill] = useState('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
 
   const sections = [
     { id: 'basic', label: 'Basic Info', icon: <User size={18} /> },
@@ -192,6 +193,42 @@ const ProfileEditPage: React.FC = () => {
     }
   };
 
+  const handleCoverPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      setIsUploadingCover(true);
+      setError('');
+      const response = await uploadCoverPhoto(file);
+
+      if (response.success && response.data) {
+        // Update user context
+        if (updateUser && response.data.user) {
+          updateUser(response.data.user);
+        }
+        setSuccess('Cover photo updated successfully!');
+      }
+    } catch (err: any) {
+      console.error('Error uploading cover photo:', err);
+      setError(err.response?.data?.message || 'Error uploading cover photo');
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -217,7 +254,7 @@ const ProfileEditPage: React.FC = () => {
         experience: formData.experience,
         education: formData.education,
         mentorshipAvailable: formData.mentorshipAvailable,
-        location: formData.location.city 
+        location: formData.location.city
           ? `${formData.location.city}${formData.location.state ? ', ' + formData.location.state : ''}${formData.location.country ? ', ' + formData.location.country : ''}`
           : '',
       } as unknown as Partial<UserProfile>;
@@ -231,10 +268,7 @@ const ProfileEditPage: React.FC = () => {
         }
         setSuccess('Profile updated successfully!');
 
-        // Redirect to profile after 1.5 seconds
-        setTimeout(() => {
-          navigate('/profile');
-        }, 1500);
+        // Removed redirect to profile after saving so user can continue editing
       }
     } catch (err: any) {
       console.error('Error updating profile:', err);
@@ -282,39 +316,81 @@ const ProfileEditPage: React.FC = () => {
           )}
 
           {/* Profile Picture Section */}
-          <Card variant="elevated" className="p-6 mb-6 border border-neutral-100">
-            <h2 className="text-xl font-bold text-neutral-900 mb-4">Profile Picture</h2>
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                <img
-                  src={currentUser?.profilePicture || `https://ui-avatars.com/api/?name=${currentUser?.firstName}+${currentUser?.lastName}&size=128`}
-                  alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-medium"
-                />
-                {isUploadingPhoto && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                    <Loader2 size={24} className="animate-spin text-white" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label htmlFor="profile-picture" className="cursor-pointer">
-                  <div className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-block">
-                    {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
-                  </div>
-                  <input
-                    id="profile-picture"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleProfilePictureChange}
-                    className="hidden"
-                    disabled={isUploadingPhoto}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <Card variant="elevated" className="p-6 border border-neutral-100 flex-1">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Profile Picture</h2>
+              <div className="flex flex-col items-center sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                <div className="relative">
+                  <img
+                    src={currentUser?.profilePicture || `https://ui-avatars.com/api/?name=${currentUser?.firstName}+${currentUser?.lastName}&size=128`}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-medium"
                   />
-                </label>
-                <p className="text-sm text-neutral-500 mt-2">JPG, PNG or GIF. Max size 5MB.</p>
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                      <Loader2 size={24} className="animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="text-center sm:text-left">
+                  <label htmlFor="profile-picture" className="cursor-pointer">
+                    <div className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-block text-sm font-medium">
+                      {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                    </div>
+                    <input
+                      id="profile-picture"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePictureChange}
+                      className="hidden"
+                      disabled={isUploadingPhoto}
+                    />
+                  </label>
+                  <p className="text-xs text-neutral-500 mt-2">JPG, PNG or GIF. Max 5MB.</p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+
+            <Card variant="elevated" className="p-6 border border-neutral-100 flex-1">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Cover Photo</h2>
+              <div className="flex flex-col items-center sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                <div className="relative w-full sm:w-32 h-20 sm:h-24 rounded-lg overflow-hidden bg-neutral-200 flex-shrink-0">
+                  {currentUser?.coverPhoto ? (
+                    <img
+                      src={currentUser.coverPhoto}
+                      alt="Cover"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-r from-primary-100 to-primary-50 flex items-center justify-center">
+                      <Globe size={24} className="text-primary-300" />
+                    </div>
+                  )}
+                  {isUploadingCover && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                      <Loader2 size={24} className="animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="text-center sm:text-left">
+                  <label htmlFor="cover-photo" className="cursor-pointer">
+                    <div className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-block text-sm font-medium">
+                      {isUploadingCover ? 'Uploading...' : 'Change Cover'}
+                    </div>
+                    <input
+                      id="cover-photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCoverPhotoChange}
+                      className="hidden"
+                      disabled={isUploadingCover}
+                    />
+                  </label>
+                  <p className="text-xs text-neutral-500 mt-2">16:9 aspect ratio recommended. Max 5MB.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
 
           {/* Section Navigation */}
           <div className="flex overflow-x-auto border-b border-neutral-200 mb-6">
@@ -322,11 +398,10 @@ const ProfileEditPage: React.FC = () => {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`flex items-center space-x-2 px-6 py-3 border-b-2 font-semibold text-sm transition-colors whitespace-nowrap ${
-                  activeSection === section.id
-                    ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
-                }`}
+                className={`flex items-center space-x-2 px-6 py-3 border-b-2 font-semibold text-sm transition-colors whitespace-nowrap ${activeSection === section.id
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                  }`}
               >
                 {section.icon}
                 <span>{section.label}</span>
