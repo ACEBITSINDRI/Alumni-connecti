@@ -15,7 +15,6 @@ import {
   Building2,
   Hammer,
   HardHat,
-  Ruler,
   Trophy,
   Target,
   Lightbulb,
@@ -40,10 +39,10 @@ import listens from "../assets/civil eng element/listens.jpg";
 // import studentDiscuss from '../assets/civil eng element/student discuss.png';
 // import alumniTalk from '../assets/civil eng element/studnet alumni talk.png';
 // import aestheticBuilding from '../assets/civil eng element/aesthetic building.jpeg';
-import bimProject from "../assets/civil eng element/BIM Project Management Software _ BEXEL Manager.jpeg";
+// import bimProject from "../assets/civil eng element/BIM Project Management Software _ BEXEL Manager.jpeg";
 // import bridgesWithNames from '../assets/civil eng element/bridges with names.jpeg';
 // import beautifulBuilding from '../assets/civil eng element/buitiful building.jpeg';
-import roadDesign from "../assets/civil eng element/Road Design_ Pavement Thickness and Material Quantity Calculations.jpeg";
+// import roadDesign from "../assets/civil eng element/Road Design_ Pavement Thickness and Material Quantity Calculations.jpeg";
 // import multiFamousBuilding from '../assets/civil eng element/multi famous building.jpeg';
 // import nightView from '../assets/civil eng element/night view 🤍🪟.jpeg';
 // import trendyCivil from '../assets/civil eng element/trendy civil.jpeg';
@@ -57,7 +56,7 @@ import four from "../assets/civil eng element/four.jpg";
 // import learn from '../assets/civil eng element/learn.jpg';
 import archimarvels from "../assets/civil eng element/archimarvels.jpg";
 import moderndesign from "../assets/civil eng element/moderndesign.jpg";
-import bim10Dimensions from "../assets/civil eng element/BIM 10 Dimensions.jpeg";
+// import bim10Dimensions from "../assets/civil eng element/BIM 10 Dimensions.jpeg";
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -97,7 +96,7 @@ const LandingPage: React.FC = () => {
     const pauseEndMs = 1000; // pause after full typed
     const pauseStartMs = 600; // pause before re-typing after deletion
 
-    let timeoutId;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     if (phase === "typing") {
       if (shownCount < totalLength) {
